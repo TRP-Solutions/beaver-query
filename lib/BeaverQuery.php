@@ -5,219 +5,118 @@ https://github.com/TRP-Solutions/dbtool/blob/master/LICENSE
 */
 declare(strict_types=1);
 namespace TRP\BeaverQuery;
-use TRP\BeaverQuery\Expression\{Expression, ExpressionAnd, ExpressionOr, ExpressionList};
+use TRP\BeaverQuery\Expression\{Expression, Identifier, BooleanAnd, BooleanOr, FunctionCall, Unsafe};
+use TRP\BeaverQuery\Join\{Join,Type};
+use TRP\BeaverQuery\Statement\{Insert, Select, Update, Delete};
 
 class BeaverQuery {
-	private static string|null $default_database = null;
+	private static ?string $default_database = null;
+	private static bool $implicit_database_allowed = false;
 	/*
 		IDEA: Maybe make a static configure method that returns a BeaverQuery instance.
 		Static calls would use the configurations from either the first or the last instance,
 		or fall back to default values.
 	*/
 
-	public static function setDefaultDatabase(string|null $database){
+	public static function setDefaultDatabase(?string $database): void {
 		self::$default_database = $database;
 	}
 
-	public static function getDefaultDatabase(): string|true|null {
+	public static function getDefaultDatabase(): ?string {
 		return self::$default_database;
 	}
 
-	public static function select(array $values = [], string $table = null, ?string $alias = null, ?string $database = null, bool $implicit_database = false){
-		$table = new Table($table, $alias, $database, $implicit_database);
-		return new SelectQuery($values, $table);
+	public static function allowImplicitDatabase(bool $allow = true): void {
+		self::$implicit_database_allowed = $allow;
 	}
 
-	public static function table(string $name, ?string $alias = null, ?string $database = null, bool $implicit_database = false){
-		return new Table($name, $alias, $database, $implicit_database);
-	}
-
-	public static function and(...$expressions): ExpressionAnd {
-		return ExpressionAnd::parse(...$expressions);
-	}
-
-	public static function or(...$expressions): ExpressionOr {
-		return ExpressionOr::parse(...$expressions);
-	}
-
-	public static function expr($expression): Expression {
-		return Expression::parse($expression);
-	}
-}
-
-abstract class TableQuery {
-	protected static string $whitespace = PHP_EOL;
-	protected Table $table;
-
-	abstract public function __toString(): string;
-}
-
-class SelectQuery extends TableQuery {
-	use FieldList;
-	protected array $select_expr = [];
-	protected ?Expression $where = null;
-	protected ?array $groupby = null;
-	protected ?Expression $having = null;
-	protected ?array $orderby = null;
-	protected ?int $limit = null;
-
-	public function __construct(array $values = [], ?Table $table = null){
-		if(isset($table)){
-			$this->table = $table;
-			foreach($table->get_fields() as $field){
-				$this->select_expr[] = $field;
+	public static function insert($table, array $columns = [], array ...$rows): Insert {
+		$insert = new Insert(Table::parse($table, self::$implicit_database_allowed));
+		if(!empty($columns)){
+			$insert->columns($columns);
+		}
+		if(!empty($rows)){
+			foreach($rows as $row){
+				$insert->values(...$row);
 			}
 		}
-		foreach($values as $value){
-			$this->select_expr[] = Expression::parse($value);
-		}
+		return $insert;
 	}
 
-	public function from(string|array|Table $table){
-		if(is_string($table)){
-			$this->table = new Table($table);
-		} elseif(is_array($table)){
-			$this->table = new Table(...$table);
+	public static function select($table = null, array $values = []): Select {
+		if(isset($table)){
+			$table = Table::parse($table, self::$implicit_database_allowed);
+			$table_name = $table->get_name();
+			$columns = [];
+			$expr = [];
+			foreach($values as $value){
+				if(is_string($value)){
+					$identifier = Parser::dotted_name_with_alias($value);
+					if(isset($identifier)){
+						$identifier[2] ??= $table_name;
+						if($identifier[2] == $table_name){
+							$columns[] = $identifier;
+							continue;
+						}
+					}
+				}
+				$expr[] = $value;
+			}
+			$table->columns(...$columns);
 		} else {
-			$this->table = $table;
-		}
+			$expr = $values;
+		}		
+
+		return new Select($table, $expr);
 	}
 
-	public function where(...$expr){
-		if(!isset($this->where)){
-			$this->where = ExpressionAnd::parse(...$expr);
+	public static function update($table, ...$values): Update {
+		return new Update(Table::parse($table, self::$implicit_database_allowed));
+	}
+
+	public static function delete($table, $where = null): Delete {
+		$delete = new Delete(Table::parse($table, self::$implicit_database_allowed));
+		if(isset($where)){
+			$delete->where($where);
+		}
+		return $delete;
+	}
+
+	public static function join($table, $type = 'JOIN'): Join {
+		return Join::specified_join(Type::parse($type), Table::parse($table, self::$implicit_database_allowed));
+	}
+
+	public static function table($table, array $columns = []): Table {
+		$table = Table::parse($table, self::$implicit_database_allowed);
+		$table->columns(...$columns);
+		return $table;
+	}
+
+	public static function name(string $firstname, ?string $secondname = null): Identifier {
+		if(isset($secondname)){
+			return new Identifier(context: $firstname, name: $secondname);
 		} else {
-			$this->where->and($expr);
+			return new Identifier($firstname);
 		}
 	}
 
-	public function order_by(...$expr){
-		if(!isset($this->order_by)){
-			$this->order_by = ExpressionList::parse(...$expr);
-		} else {
-			$this->order_by->add(...$expr);
-		}
+	public static function func(string $name, ...$expressions): FunctionCall {
+		return FunctionCall::parse($name, ...$expressions);
 	}
 
-	public function __toString(){
-		$sql = ["SELECT\n  ".implode(",\n  ",$this->select_expr)];
-		if(isset($this->table)){
-			$sql[] = "FROM\n  ".$this->table->identifier_with_alias();
-		}
-		if(isset($this->where)){
-			$sql[] = "WHERE\n  ".$this->where;
-		}
-		if(!empty($this->groupby)){
-			$sql[] = "GROUP BY ".implode(',',$this->groupby);
-		}
-		if(isset($this->having)){
-			$sql[] = "HAVING ".$this->having;
-		}
-		if(!empty($this->orderby)){
-			$sql[] = "ORDER BY ".implode(',',$this->orderby);
-		}
-		if(isset($this->limit)){
-			$sql[] = "LIMIT ".$this->limit();
-		}
-		return implode(self::$whitespace, $sql);
+	public static function and(...$expressions): Expression {
+		return BooleanAnd::parse(...$expressions);
 	}
 
-	protected function add_field(string|array|Field $field){
-		if(is_string($field)){
-			$field = new Field($field);
-		} elseif(is_array($field)){
-			$field = new Field(...$field);
-		}
-		$this->select_expr[] = $field;
-	}
-}
-
-class Table {
-	use FieldList;
-	protected array $field_list = [];
-
-	public function __construct(protected string $name, protected ?string $alias = null, protected ?string $database = null, bool $implicit_database = false){
-		if(!$implicit_database){
-			$this->database ??= BeaverQuery::getDefaultDatabase();
-		}
-		if(!isset($this->database) && !$implicit_database){
-			throw new BQException("Implicit database not enabled. Database missing from table `$name`");
-		}
+	public static function or(...$expressions): Expression {
+		return BooleanOr::parse(...$expressions);
 	}
 
-	public function select(): SelectQuery {
-		return new SelectQuery(table: $this);
+	public static function xor(...$expressions): Expression {
+		return BooleanXor::parse(...$expressions);
 	}
 
-	public function get_fields(): array {
-		return $this->field_list;
+	public static function unsafe(string $raw_sql): Unsafe {
+		return Unsafe::unsafe($raw_sql);
 	}
-
-	public function alias(){
-		return '`'.($this->alias ?? $this->name).'`';
-	}
-
-	public function identifier_with_alias(){
-		$identifier = "`$this->name`";
-		if(isset($this->database)){
-			$identifier = "`$this->database`.".$identifier;
-		}
-		if(isset($this->alias)){
-			$identifier .= " AS `$this->alias`";
-		}
-		return $identifier;
-	}
-
-	public function __get(string $name): Field {
-		return $this->field($name);
-	}
-
-	public function field($name, ?string $field_alias = null): Field {
-		return new Field($name, alias: $field_alias, table: $this->alias ?? $this->name);
-	}
-
-	protected function add_field(string|array|Field $field){
-		if(is_string($field)){
-			$field = $this->field($field);
-		} elseif(is_array($field)){
-			$field = $this->field(...$field);
-		}
-		$this->field_list[] = $field;
-	}
-}
-
-require_once __DIR__."/Expression.php";
-class Field extends Expression {
-	public function __construct(public readonly string $name, public readonly ?string $alias = null, public readonly ?string $table = null){
-
-	}
-
-	public function __toString(){
-		return $this->identifier_with_alias();
-	}
-
-	public function identifier_with_alias(){
-		$identifier = "`$this->name`";
-		if(isset($this->table)){
-			$identifier = "`$this->table`.".$identifier;
-		}
-		if(isset($this->alias)){
-			$identifier .= " AS `$this->alias`";
-		}
-		return $identifier;
-	}
-}
-
-trait FieldList {
-	public function fields(string|array|Field ...$field_list){
-		foreach($field_list as $field){
-			$this->add_field($field);
-		}
-	}
-
-	abstract protected function add_field(string|array|Field $field);
-}
-
-class BeaverQueryException extends \Exception {
-
 }

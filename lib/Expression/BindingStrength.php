@@ -10,7 +10,7 @@ enum BindingStrength: int {
 	// Placeholder, for when binding strength hasn't been detected
 	case Undefined = 0;
 	// = (assignment), :=
-	case Assign = 1;
+	case Assignment = 1;
 	// OR, ||
 	case Or = 2;
 	// XOR
@@ -44,7 +44,7 @@ enum BindingStrength: int {
 	// INTERVAL
 	case Interval = 17;
 	// Any constant or identifier
-	case Constant = 18;
+	case Atom = 18;
 
 	public function stronger_than(self $other): bool {
 		return $this->value > $other->value;
