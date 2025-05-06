@@ -70,6 +70,7 @@ Namespaced name: `\TRP\BeaverQuery\Statement\Select`
 | where          | `where(​...$expr): Select`                               |
 | order_by       | `order_by(​...$expr): Select`                            |
 | limit          | `limit(​?int $limit): Select`                            |
+| offset         | `offset(​?int $offset): Select`                          |
 | group_by       | `group_by(​...$expr): Select`                            |
 | having         | `having(​...$expr): Select`                              |
 | print          | `print(): string`                                       |

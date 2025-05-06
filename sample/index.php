@@ -46,6 +46,17 @@ $sql = BQ::select('staff',['id','name','username','birthday']);
 PHP);
 
 example(<<<'PHP'
+$sql = BQ::select('staff',['id','name','username','birthday']);
+$sql->limit(10);
+PHP);
+
+example(<<<'PHP'
+$sql = BQ::select('staff',['id','name','username','birthday']);
+$sql->limit(10);
+$sql->offset(20);
+PHP);
+
+example(<<<'PHP'
 $staff = BQ::table('staff',['id','name','username','birthday']);
 $has_birthday = $staff->birthday->eq(BQ::func('TODAY'));
 $sql = $staff->select()->where($has_birthday);

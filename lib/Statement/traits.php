@@ -66,6 +66,14 @@ trait Limit {
 	}
 }
 
+trait Offset {
+	protected ?int $offset = null;
+	public function offset(?int $offset): static {
+		$this->offset = $offset;
+		return $this;
+	}
+}
+
 trait GroupBy {
 	protected ?ExpressionList $groupby = null;
 	protected ?Expression $having = null;

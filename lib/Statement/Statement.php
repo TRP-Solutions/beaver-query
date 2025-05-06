@@ -134,7 +134,7 @@ class Insert extends TableStatement {
 }
 
 class Select extends TableStatement {
-	use Join, Where, OrderBy, GroupBy, Limit;
+	use Join, Where, OrderBy, GroupBy, Limit, Offset;
 	protected array $select_expr = [];
 
 	public function __construct(?Table $table = null, array $values = []){
@@ -179,7 +179,10 @@ class Select extends TableStatement {
 			$sql[] = "ORDER BY ".$this->orderby;
 		}
 		if(isset($this->limit)){
-			$sql[] = "LIMIT ".$this->limit();
+			$sql[] = "LIMIT ".$this->limit;
+			if(isset($this->offset)){
+				$sql[] = "OFFSET ".$this->offset;
+			}
 		}
 		return implode(self::$whitespace, $sql);
 	}
