@@ -24,6 +24,10 @@ class Expression {
 
 	}
 
+	public function as(string $alias): ExpressionAlias {
+		return ExpressionAlias::parse($this, $alias);
+	}
+
 	public function is($expr, $allow_null = false): Expression {
 		if(!isset($expr)){
 			return $allow_null ? self::is_null() : throw new BeaverQueryException('Attempting to compare with null without explicit permission');

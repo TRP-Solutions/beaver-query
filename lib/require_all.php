@@ -13,6 +13,7 @@ require_once __DIR__.'/Expression/BooleanOperation.php';
 require_once __DIR__.'/Expression/BooleanAnd.php';
 require_once __DIR__.'/Expression/BooleanOr.php';
 require_once __DIR__.'/Expression/BooleanXor.php';
+require_once __DIR__.'/Expression/ExpressionAlias.php';
 require_once __DIR__.'/Expression/ExpressionList.php';
 require_once __DIR__.'/Expression/FunctionCall.php';
 require_once __DIR__.'/Expression/Identifier.php';

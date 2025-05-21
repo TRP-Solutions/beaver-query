@@ -5,11 +5,12 @@ https://github.com/TRP-Solutions/beaver-query/blob/main/LICENSE.txt
 */
 declare(strict_types=1);
 namespace TRP\BeaverQuery\Statement;
-use TRP\BeaverQuery\Expression\{Expression,BindingStrength,ExpressionInterface};
+use TRP\BeaverQuery\Expression\{Expression,BindingStrength,ExpressionAlias,AtomNull};
 use TRP\BeaverQuery\BeaverQueryException;
 
 class ExpressionProxy extends Expression {
 	protected ?Expression $inner = null;
+	protected ?ExpressionAlias $alias = null;
 
 	public function __construct(protected Statement $statement, protected string $callback){
 
@@ -31,10 +32,23 @@ class ExpressionProxy extends Expression {
 				call_user_func([$this->statement, $this->callback], $this);
 			}
 			$this->inner = $obj;
+			if(isset($this->alias)){
+				$this->alias = $this->inner->as($this->alias->alias());
+			}
 			return $this;
 		} else {
 			return $obj;
 		}
+	}
+
+	public function as(string $alias): ExpressionAlias {
+		if(isset($this->$alias)){
+			$this->alias->alias($alias);
+		} else {
+			$expr = $this->inner ?? AtomNull::get();
+			$this->alias = $expr->alias($alias);
+		}
+		return $this->alias;
 	}
 
 	public function is($expr, $allow_null = false): Expression {
@@ -98,7 +112,7 @@ class ExpressionProxy extends Expression {
 	}
 
 	public function __toString(){
-		return isset($this->inner) ? (string) $this->inner : '';
+		return (string) ($this->alias ?? $this->inner ?? '');
 	}
 
 	public function print(BindingStrength $outer_strength): string {

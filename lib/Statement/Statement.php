@@ -5,7 +5,7 @@ https://github.com/TRP-Solutions/beaver-query/blob/main/LICENSE.txt
 */
 declare(strict_types=1);
 namespace TRP\BeaverQuery\Statement;
-use TRP\BeaverQuery\Expression\{Expression, Identifier, ExpressionList, Operation, FunctionCall};
+use TRP\BeaverQuery\Expression\{Expression, Identifier, ExpressionAlias, ExpressionList, Operation, FunctionCall};
 use TRP\BeaverQuery\{BeaverQuery,Table,Parser,BeaverQueryException};
 
 abstract class Statement {
@@ -146,9 +146,7 @@ class Select extends TableStatement {
 		if(isset($table)){
 			$this->table = $table;
 		}
-		foreach($values as $value){
-			$this->select_expr[] = Identifier::parse($value);
-		}
+		$this->columns(...$values);
 	}
 
 	public function from(string|array|Table $table): Table {
@@ -158,7 +156,15 @@ class Select extends TableStatement {
 
 	public function columns(...$columns): static {
 		foreach(Parser::list($columns) as $column){
-			$this->select_expr[] = Identifier::parse($column);
+			if(is_string($column)){
+				$identifier = Parser::dotted_name_with_alias($column);
+				if(isset($identifier) && !isset($identifier[2])){
+					$table_name ??= $this->table->get_name();
+					$this->select_expr[] = Identifier::parse_strict($identifier, $table_name);
+					continue;
+				}
+			}
+			$this->select_expr[] = ExpressionAlias::parse($column);
 		}
 		return $this;
 	}
@@ -195,7 +201,7 @@ class Select extends TableStatement {
 	protected function select_expr(): string {
 		$expr = $this->select_expr;
 		if(isset($this->table)){
-			$expr = array_merge($expr, $this->table->get_column_list());
+			$expr = array_merge($this->table->get_column_list(), $expr);
 		}
 		if(!empty($this->joins)){
 			$expr = array_merge($expr, ...array_map(fn($join)=>$join->table->get_column_list(), $this->joins));
