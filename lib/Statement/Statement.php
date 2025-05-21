@@ -210,26 +210,6 @@ class Update extends TableStatement {
 
 	}
 
-	public function values(...$values): static {
-		if(count($values) == 1 && is_array($values[0])){
-			$values = $values[0];
-		}
-		$assignments = [];
-		foreach($values as $key => $value){
-			if(is_numeric($key) && is_array($value) && isset($value[0]) && array_key_exists(1, $value)){
-				$assignments[] = Operation::assignment(Column::parse_strict($value[0]), Expression::parse($value[1]));
-			} else {
-				$assignments[] = Operation::assignment(Column::parse_strict($key), Expression::parse($value));
-			}
-		}
-		if(!isset($this->assignment_list)){
-			$this->assignment_list = new ExpressionList(...$assignments);
-		} else {
-			$this->assignment_list->add(...$assignments);
-		}
-		return $this;
-	}
-
 	public function print(): string {
 		$sql = ["UPDATE"];
 		if($this->low_priority){
