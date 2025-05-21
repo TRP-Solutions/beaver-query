@@ -40,7 +40,7 @@ trait Where {
 		if(!isset($this->where)){
 			$this->where = BooleanAnd::parse(...$expr);
 		} else {
-			$this->where->and($expr);
+			$this->where = $this->where->and(...$expr);
 		}
 		return $this;
 	}

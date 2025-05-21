@@ -15,7 +15,7 @@ class BooleanAnd extends BooleanOperation {
 	}
 
 	public function and(...$expr): Expression {
-		$this->expressions = array_merge($this->expressions, self::parse_and_filter($expr));
+		$this->expressions = array_merge($this->expressions, self::parse_and_filter(...$expr));
 		return $this;
 	}
 }

@@ -89,16 +89,16 @@ class Expression {
 		return FunctionCall::parse($function, $this, ...$additional_arguments);
 	}
 
-	public function and($expr): Expression {
-		return BooleanAnd::parse($this, $expr);
+	public function and(...$expr): Expression {
+		return BooleanAnd::parse($this, ...$expr);
 	}
 
-	public function or($expr): Expression {
-		return BooleanOr::parse($this, $expr);
+	public function or(...$expr): Expression {
+		return BooleanOr::parse($this, ...$expr);
 	}
 
-	public function xor($expr): Expression {
-		return BooleanXor::parse($this, $expr);
+	public function xor(...$expr): Expression {
+		return BooleanXor::parse($this, ...$expr);
 	}
 
 	public function __toString(): string {
