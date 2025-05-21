@@ -44,6 +44,10 @@ trait Where {
 		}
 		return $this;
 	}
+
+	public function where_proxy(): ExpressionProxy {
+		return new ExpressionProxy($this, 'where');
+	}
 }
 
 trait OrderBy {
@@ -94,6 +98,10 @@ trait GroupBy {
 			$this->having->and($expr);
 		}
 		return $this;
+	}
+
+	public function having_proxy(): ExpressionProxy {
+		return new ExpressionProxy($this, 'where');
 	}
 }
 

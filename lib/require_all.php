@@ -23,6 +23,7 @@ require_once __DIR__.'/Join/Join.php';
 require_once __DIR__.'/Join/Type.php';
 require_once __DIR__.'/Statement/traits.php';
 require_once __DIR__.'/Statement/Statement.php';
+require_once __DIR__.'/Statement/ExpressionProxy.php';
 require_once __DIR__.'/BeaverQuery.php';
 require_once __DIR__.'/BeaverQueryException.php';
 require_once __DIR__.'/Parser.php';

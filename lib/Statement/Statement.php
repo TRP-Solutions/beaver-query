@@ -24,13 +24,18 @@ abstract class TableStatement extends Statement {
 		if($key === 'table'){
 			return isset($this->table);
 		} else {
-			return false;
+			$proxy_func = $key.'_proxy';
+			return is_callable([$this,$proxy_func]);
 		}
 	}
 
 	public function __get($key){
 		if($key === 'table'){
 			return $this->table;
+		}
+		$proxy_func = $key.'_proxy';
+		if(is_callable([$this,$proxy_func])){
+			return $this->$proxy_func();
 		}
 	}
 }
