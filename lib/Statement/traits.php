@@ -34,6 +34,7 @@ trait Join {
 	}
 }
 
+#[\Property('where', '\TRP\BeaverQuery\Expression\ExpressionProxy', set: false)]
 trait Where {
 	protected ?Expression $where = null;
 	public function where(...$expr): static {
@@ -50,15 +51,20 @@ trait Where {
 	}
 }
 
+#[\Property('order_by', '\TRP\BeaverQuery\Expression\ExpressionProxy', set: false)]
 trait OrderBy {
 	protected ?OrderingList $orderby = null;
 	public function order_by(...$expr): static {
 		if(!isset($this->orderby)){
-			$this->orderby = OrderingList::parse($expr);
+			$this->orderby = OrderingList::parse(...$expr);
 		} else {
-			$this->orderby->add($expr);
+			$this->orderby->add(...$expr);
 		}
 		return $this;
+	}
+
+	public function order_by_proxy(): ExpressionProxy {
+		return new ExpressionProxy($this, 'order_by');
 	}
 }
 
@@ -78,6 +84,8 @@ trait Offset {
 	}
 }
 
+#[\Property('group_by', '\TRP\BeaverQuery\Expression\ExpressionProxy', set: false)]
+#[\Property('having', '\TRP\BeaverQuery\Expression\ExpressionProxy', set: false)]
 trait GroupBy {
 	protected ?ExpressionList $groupby = null;
 	protected ?Expression $having = null;
@@ -90,6 +98,10 @@ trait GroupBy {
 		}
 		return $this;
 	}
+
+	public function group_by_proxy(): ExpressionProxy {
+		return new ExpressionProxy($this, 'group_by');
+	}
 	
 	public function having(...$expr): static {
 		if(!isset($this->having)){
@@ -101,7 +113,7 @@ trait GroupBy {
 	}
 
 	public function having_proxy(): ExpressionProxy {
-		return new ExpressionProxy($this, 'where');
+		return new ExpressionProxy($this, 'having');
 	}
 }
 

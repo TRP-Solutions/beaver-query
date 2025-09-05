@@ -80,6 +80,10 @@ class Table {
 		return $this->name;
 	}
 
+	public function set_alias(string $name) {
+		$this->name->set_alias($name);
+	}
+
 	public function get_column_list(): array {
 		return $this->column_list;
 	}

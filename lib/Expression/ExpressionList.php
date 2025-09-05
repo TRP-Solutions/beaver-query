@@ -47,3 +47,9 @@ class OrderingList extends ExpressionList {
 		return $this;
 	}
 }
+
+class ArgumentList extends ExpressionList {
+	public function __toString(): string {
+		return '('.implode(',', $this->expressions).')';
+	}
+}

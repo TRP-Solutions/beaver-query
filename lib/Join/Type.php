@@ -22,7 +22,7 @@ enum Type: string {
 	case NaturalRight = "NATURAL RIGHT JOIN";
 	case NaturalRightOuter = "NATURAL RIGHT OUTER JOIN";
 
-	public static function parse(string|Type $type){
+	public static function parse(string|self $type): self {
 		if($type instanceof self){
 			return $type;
 		}
@@ -33,21 +33,21 @@ enum Type: string {
 		if(!str_ends_with($type_string, 'JOIN')){
 			$type_string .= ' JOIN';
 		}
-		$enum = Type::tryFrom($type_string);
+		$enum = self::tryFrom($type_string);
 		if(isset($enum)){
 			return $enum;
 		}
 		throw new BeaverQueryException("Unregcognized join type '$type'");
 	}
 
-	public function requires_specification(){
+	public function requires_specification(): bool {
 		return $this == self::Left
 			|| $this == self::LeftOuter
 			|| $this == self::Right
 			|| $this == self::RightOuter;
 	}
 
-	public function allows_specification(){
+	public function allows_specification(): bool {
 		return $this->requires_specification()
 			|| $this == self::Join
 			|| $this == self::Inner

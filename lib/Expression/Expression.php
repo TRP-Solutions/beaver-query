@@ -89,6 +89,22 @@ class Expression {
 		return Operation::compare_op($this, '=', self::parse($expr));
 	}
 
+	public function not_eq($expr): Expression {
+		return Operation::compare_op($this, '!=', self::parse($expr));
+	}
+
+	public function eq_nullsafe($expr): Expression {
+		return Operation::compare_op($this, '<=>', self::parse($expr));
+	}
+
+	public function in(array $list): Expression {
+		return Operation::in_op($this, ArgumentList::parse(...$list));
+	}
+
+	public function not_in(array $list): Expression {
+		return Operation::not_in_op($this, ArgumentList::parse(...$list));
+	}
+
 	public function func(string $function, ...$additional_arguments): Expression {
 		return FunctionCall::parse($function, $this, ...$additional_arguments);
 	}

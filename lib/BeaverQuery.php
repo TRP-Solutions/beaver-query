@@ -92,11 +92,11 @@ class BeaverQuery {
 		return $table;
 	}
 
-	public static function name(string $firstname, ?string $secondname = null): Identifier {
+	public static function name(string $name, ?string $subname = null): Identifier {
 		if(isset($secondname)){
-			return new Identifier(context: $firstname, name: $secondname);
+			return new Identifier(context: $name, name: $subname);
 		} else {
-			return new Identifier($firstname);
+			return new Identifier($name);
 		}
 	}
 

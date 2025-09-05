@@ -95,6 +95,22 @@ class ExpressionProxy extends Expression {
 		return $this->__call('eq',[$expr]);
 	}
 
+	public function not_eq($expr): Expression {
+		return $this->__call('not_eq',[$expr]);
+	}
+
+	public function eq_nullsafe($expr): Expression {
+		return $this->__call('eq_nullsafe',[$expr]);
+	}
+
+	public function in(array $list): Expression {
+		return $this->__call('in',[$list]);
+	}
+
+	public function not_in(array $list): Expression {
+		return $this->__call('not_in',[$list]);
+	}
+
 	public function func(string $function, ...$additional_arguments): Expression {
 		return $this->__call('func',[$function,...$additional_arguments]);
 	}

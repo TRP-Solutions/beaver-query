@@ -9,6 +9,7 @@ use TRP\BeaverQuery\Table;
 use TRP\BeaverQuery\BeaverQueryException;
 use TRP\BeaverQuery\Expression\{Expression,BooleanAnd};
 
+#[\Property('table', '\TRP\BeaverQuery\Table', set: false)]
 class Join {
 	protected Table $table;
 	protected ?Expression $on;

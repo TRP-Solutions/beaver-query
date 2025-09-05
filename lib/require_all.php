@@ -6,6 +6,7 @@ https://github.com/TRP-Solutions/beaver-query/blob/main/LICENSE.txt
 declare(strict_types=1);
 namespace TRP\BeaverQuery;
 
+require_once __DIR__.'/BeaverQueryException.php';
 require_once __DIR__.'/Expression/Expression.php';
 require_once __DIR__.'/Expression/Atom.php';
 require_once __DIR__.'/Expression/BindingStrength.php';
@@ -26,6 +27,5 @@ require_once __DIR__.'/Statement/traits.php';
 require_once __DIR__.'/Statement/Statement.php';
 require_once __DIR__.'/Statement/ExpressionProxy.php';
 require_once __DIR__.'/BeaverQuery.php';
-require_once __DIR__.'/BeaverQueryException.php';
 require_once __DIR__.'/Parser.php';
 require_once __DIR__.'/Table.php';

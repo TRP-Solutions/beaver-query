@@ -63,13 +63,20 @@ $sql = $staff->select()->where($has_birthday);
 PHP);
 
 example(<<<'PHP'
+$staff = BQ::table('staff',['id','name','username','birthday']);
+$sql = $staff->select();
+$sql->where->birthday->eq(BQ::func('TODAY'));
+$staff->set_alias('people');
+PHP);
+
+example(<<<'PHP'
 $january_birthday = BQ::func('MONTH', BQ::name('staff','birthday'))->eq(1);
 $sql = BQ::select('staff',['id','name','username','birthday'])->where($january_birthday);
 PHP);
 
 example(<<<'PHP'
 $client_supplied_string = "Robert'); DROP TABLE Students;-- \x00 \x0A \x0D \x1A \x22 \x27 \x5C \x60";
-$name_match = BQ::func('MONTH', BQ::name('staff','name'))->eq($client_supplied_string);
+$name_match = BQ::name('staff','name')->eq($client_supplied_string);
 $sql = BQ::select('staff',['id','name','username','birthday'])->where($name_match);
 PHP);
 
@@ -107,8 +114,25 @@ $sql = $s->select();
 $sql->inner_join($s2, $s->id->eq($s2->friend_id));
 PHP);
 
+example(<<<'PHP'
+$sql = BQ::select('staff',['id','name']);
+$sql->columns(
+	'username',
+	'birthday',
+	$sql->table->birthday->func('YEAR')->as('birthyear')
+);
+$sql->where->id->eq(1000);
+$sql->where->disabled->eq(0);
+$sql->limit(1);
+PHP);
 
-
+example(<<<'PHP'
+$sql = BQ::select('staff',['id','name','username','birthday']);
+$sql->where->id->in([1000, 1001, 1002, 1003]);
+$sql->order_by->birthday->eq(BQ::func('TODAY'));
+$sql->order_by->name;
+$sql->order_by([$sql->table->id,'DESC']);
+PHP);
 
 echo "<h1>Insert</h1>";
 
@@ -123,7 +147,12 @@ PHP);
 
 example(<<<'PHP'
 $sql = BQ::insert('staff');
-$sql->set(['id'=>1, 'name'=>'John', 'username'=>'john', 'birthday'=>'2000-12-31']);
+$sql->set([
+	'id'=>1,
+	'name'=>'John',
+	'username'=>'john',
+	'birthday'=>'2000-12-31'
+]);
 $sql->dupl_values('name','username','birthday');
 PHP);
 

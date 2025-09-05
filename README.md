@@ -82,7 +82,7 @@ Strings passed into expression building methods are automatically escaped.
 ```PHP
 use \TRP\BeaverQuery\BeaverQuery as BQ;
 $client_supplied_string = "Robert'); DROP TABLE Students;-- \x00 \x0A \x0D \x1A \x22 \x27 \x5C \x60";
-$name_match = BQ::func('MONTH', BQ::name('staff','name'))->eq($client_supplied_string);
+$name_match = BQ::name('staff','name')->eq($client_supplied_string);
 $sql = BQ::select('staff',['id','name','username','birthday'])->where($name_match);
 ```
 Output when `$sql` is converted to a string:
@@ -95,7 +95,7 @@ SELECT
 FROM
   `test`.`staff`
 WHERE
-  MONTH(`staff`.`name`) = 'Robert\'); DROP TABLE Students;-- \0 \n \r \Z " \' \\ `';
+  `staff`.`name` = 'Robert\'); DROP TABLE Students;-- \0 \n \r \Z " \' \\ `';
 ```
 
 ## Reference

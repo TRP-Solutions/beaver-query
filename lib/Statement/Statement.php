@@ -17,6 +17,7 @@ abstract class Statement {
 	abstract public function print(): string;
 }
 
+#[\Property('table', '\TRP\BeaverQuery\Table', set: false)]
 abstract class TableStatement extends Statement {
 	protected Table $table;
 
@@ -214,11 +215,13 @@ class Update extends TableStatement {
 	use ColumnAssignment, Join, Where, OrderBy, Limit;
 
 	public function __construct(
-		protected Table $table,
+		?Table $table = null,
 		protected bool $low_priority = false,
 		protected bool $ignore = false
 	){
-
+		if(isset($table)){
+			$this->table = $table;
+		}
 	}
 
 	public function print(): string {
@@ -251,12 +254,14 @@ class Delete extends TableStatement {
 	use Where, OrderBy, Limit;
 
 	public function __construct(
-		protected Table $table,
+		?Table $table = null,
 		protected bool $low_priority = false,
 		protected bool $quick = false,
 		protected bool $ignore = false
 	){
-
+		if(isset($table)){
+			$this->table = $table;
+		}
 	}
 
 	public function print(): string {
