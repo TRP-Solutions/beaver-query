@@ -93,7 +93,7 @@ class BeaverQuery {
 	}
 
 	public static function name(string $name, ?string $subname = null): Identifier {
-		if(isset($secondname)){
+		if(isset($subname)){
 			return new Identifier(context: $name, name: $subname);
 		} else {
 			return new Identifier($name);
