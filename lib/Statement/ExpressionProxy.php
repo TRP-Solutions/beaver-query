@@ -60,11 +60,11 @@ class ExpressionProxy extends Expression {
 	}
 
 	public function is_null(): Expression {
-		return $this->__call('is_null');
+		return $this->__call('is_null', []);
 	}
 
 	public function is_not_null(): Expression {
-		return $this->__call('is_not_null');
+		return $this->__call('is_not_null', []);
 	}
 
 	public function in_range($from, $to, $start_inclusive = true, $end_inclusive = true): Expression {

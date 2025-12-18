@@ -171,7 +171,16 @@ class Select extends TableStatement {
 	}
 
 	public function print(): string {
-		$sql = ["SELECT\n  ".$this->select_expr()];
+		return $this->print_select($this->select_expr());
+	}
+
+	public function to_select_count(): string {
+		$statement = $this->print_select('1 as `row`');
+		return "SELECT count(*) FROM ($statement) as `result`;";
+	}
+
+	protected function print_select(string $raw_select_expr): string {
+		$sql = ["SELECT\n  ".$raw_select_expr];
 		if(isset($this->table)){
 			$sql[] = "FROM\n  ".$this->table->get_name()->identifier_with_alias();
 		}
