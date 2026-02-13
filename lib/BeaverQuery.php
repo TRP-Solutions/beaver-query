@@ -5,7 +5,7 @@ https://github.com/TRP-Solutions/beaver-query/blob/main/LICENSE.txt
 */
 declare(strict_types=1);
 namespace TRP\BeaverQuery;
-use TRP\BeaverQuery\Expression\{Expression, Identifier, BooleanAnd, BooleanOr, FunctionCall, Atom, Unsafe};
+use TRP\BeaverQuery\Expression\{Expression, Identifier, BooleanAnd, BooleanOr, FunctionCall, Atom, Interval, Unsafe};
 use TRP\BeaverQuery\Join\{Join,Type};
 use TRP\BeaverQuery\Statement\{Insert, Select, Update, Delete};
 
@@ -118,6 +118,10 @@ class BeaverQuery {
 
 	public static function literal($value): Expression {
 		return Atom::literal($value);
+	}
+
+	public static function interval($expression, string $unit): Expression {
+		return Interval::parse($expression, $unit);
 	}
 
 	public static function unsafe(string $raw_sql): Unsafe {

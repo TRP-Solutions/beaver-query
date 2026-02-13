@@ -18,6 +18,8 @@ require_once __DIR__.'/Expression/ExpressionAlias.php';
 require_once __DIR__.'/Expression/ExpressionList.php';
 require_once __DIR__.'/Expression/FunctionCall.php';
 require_once __DIR__.'/Expression/Identifier.php';
+require_once __DIR__.'/Expression/Interval.php';
+require_once __DIR__.'/Expression/IntervalUnit.php';
 require_once __DIR__.'/Expression/Operation.php';
 require_once __DIR__.'/Expression/Ordering.php';
 require_once __DIR__.'/Expression/Unsafe.php';

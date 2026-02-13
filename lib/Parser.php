@@ -53,6 +53,17 @@ class Parser {
 		}
 	}
 
+	public static function function_name(string $name){
+		if(
+			preg_match(self::UNQUOTED_IDENTIFIER_REGEX, $name) === 1
+			|| preg_match(self::QUOTED_IDENTIFIER, $name) === 1
+		){
+			return $name;
+		} else {
+			return '`'.self::escape_identifier($name).'`';
+		}
+	}
+
 	public static function dotted_name_with_alias(string $expr){
 		$expr = trim($expr);
 		if(preg_match(self::DOTTED_NAME_ALIAS_REGEX, $expr, $matches)){
