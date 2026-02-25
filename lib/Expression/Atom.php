@@ -10,13 +10,11 @@ use TRP\BeaverQuery\{Parser,BeaverQueryException};
 class Atom extends Expression {
 	public static function literal(mixed $value): Atom {
 		if(is_bool($value)){
-			return new self($value ? AtomTrue::get() : AtomFalse::get());
+			return $value ? AtomTrue::get() : AtomFalse::get();
 		} elseif(is_int($value)){
 			return new self((string) $value);
-		/*
 		} elseif(is_float($value)){
-			TODO: convert floats to string robustly and without adjusting precision too much
-		*/
+			return new self(sprintf('%F', $value));
 		} elseif(is_string($value)){
 			return new self(Parser::string_literal($value));
 		} elseif(!isset($value)){
@@ -40,13 +38,11 @@ class Atom extends Expression {
 }
 
 abstract class AtomSingleton extends Atom {
-	protected static $instance;
-
 	public static function get(){
-		if(!isset(self::$instance)){
-			self::$instance = new static();
+		if(!isset(static::$instance)){
+			static::$instance = new static();
 		}
-		return self::$instance;
+		return static::$instance;
 	}
 
 	protected function __construct(){
@@ -55,18 +51,21 @@ abstract class AtomSingleton extends Atom {
 }
 
 class AtomTrue extends AtomSingleton {
+	protected static $instance;
 	public function __toString(): string {
 		return 'TRUE';
 	}
 }
 
 class AtomFalse extends AtomSingleton {
+	protected static $instance;
 	public function __toString(): string {
 		return 'FALSE';
 	}
 }
 
 class AtomNull extends AtomSingleton {
+	protected static $instance;
 	public function __toString(): string {
 		return 'NULL';
 	}
