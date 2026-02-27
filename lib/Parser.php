@@ -100,6 +100,6 @@ class Parser {
 	}
 
 	public static function list(array $list): array {
-		return count($list) == 1 && is_array($list[0]) ? $list[0] : $list;
+		return count($list) == 1 && is_array($list[0]??null) ? $list[0] : $list;
 	}
 }

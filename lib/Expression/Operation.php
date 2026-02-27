@@ -44,6 +44,10 @@ class Operation extends Expression {
 		return new static(BindingStrength::Comparison, $left, 'IN', $list);
 	}
 
+	public static function not_in_op(Expression $left, ArgumentList $list): static {
+		return new static(BindingStrength::Comparison, $left, 'NOT IN', $list);
+	}
+
 	public static function asc_order(Expression $expr): static {
 		return new static(BindingStrength::Undefined, $expr, 'ASC');
 	}

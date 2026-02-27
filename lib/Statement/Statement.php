@@ -253,7 +253,7 @@ class Update extends TableStatement {
 			$sql[] = "ORDER BY ".$this->orderby;
 		}
 		if(isset($this->limit)){
-			$sql[] = "LIMIT ".$this->limit();
+			$sql[] = "LIMIT ".$this->limit;
 		}
 		return implode(self::$whitespace, $sql);
 	}

@@ -19,7 +19,9 @@ class Atom extends Expression {
 			return new self(Parser::string_literal($value));
 		} elseif(!isset($value)){
 			return AtomNull::get();
-		} {
+		} elseif($value instanceof IntervalUnit){
+			return new self($value->value);
+		} else {
 			throw new BeaverQueryException("Can't convert value to literal");
 		}
 	}

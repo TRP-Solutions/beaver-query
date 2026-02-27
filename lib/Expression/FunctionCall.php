@@ -18,6 +18,8 @@ class FunctionCall extends Atom {
 			'AVG','COUNT','MAX','MIN','SUM' => static::aggregate($name, $expr),
 			'DATE_ADD','DATE_SUB' => static::date_arithmetic($name, true, ...$expr),
 			'ADDDATE','SUBDATE' => static::date_arithmetic($name, false, ...$expr),
+			'TIMESTAMPADD','TIMESTAMPDIFF' => static::timestamp($name, ...$expr),
+			'EXTRACT' => static::extract($name, ...$expr),
 			default => new static($name, Expression::map_parse($expr))
 		};
 	}
@@ -61,7 +63,15 @@ class FunctionCall extends Atom {
 		if($require_interval && !is_a($interval, '\TRP\BeaverQuery\Expression\Interval')){
 			throw new BeaverQueryException("Expected (date, expr, unit) or (date, interval) when creating function $name(date, INTERVAL expr unit)");
 		}
-		return new static($name, [$date, $interval]);
+		return new static($name, [Expression::parse($date), $interval]);
+	}
+
+	protected static function timestamp(string $name, $unit, $arg1, $arg2): static {
+		return new static($name, Expression::map_parse([IntervalUnit::parse($unit), $arg1, $arg2]));
+	}
+
+	protected static function extract($unit, ...$expr){
+		return new static($name, Expression::map_parse($expr), prefix_terms: [IntervalUnit::parse($unit),'FROM']);
 	}
 
 	protected function __construct(
