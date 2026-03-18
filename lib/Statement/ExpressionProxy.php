@@ -5,7 +5,7 @@ https://github.com/TRP-Solutions/beaver-query/blob/main/LICENSE.txt
 */
 declare(strict_types=1);
 namespace TRP\BeaverQuery\Statement;
-use TRP\BeaverQuery\Expression\{Expression,BindingStrength,ExpressionAlias,AtomNull};
+use TRP\BeaverQuery\Expression\{Expression,BindingStrength,ExpressionAlias};
 use TRP\BeaverQuery\BeaverQueryException;
 
 class ExpressionProxy extends Expression {
@@ -45,7 +45,7 @@ class ExpressionProxy extends Expression {
 		if(isset($this->$alias)){
 			$this->alias->alias($alias);
 		} else {
-			$expr = $this->inner ?? AtomNull::get();
+			$expr = $this->inner ?? Atom::null();
 			$this->alias = $expr->alias($alias);
 		}
 		return $this->alias;

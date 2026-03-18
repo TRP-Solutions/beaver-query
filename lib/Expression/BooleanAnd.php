@@ -11,7 +11,7 @@ class BooleanAnd extends BooleanOperation {
 	protected const INNER_STRENGTH = BindingStrength::And;
 
 	protected static function filter(Expression $expression): bool {
-		return !($expression instanceof AtomTrue);
+		return !($expression instanceof Atom && $expression->is_true());
 	}
 
 	public function and(...$expr): Expression {

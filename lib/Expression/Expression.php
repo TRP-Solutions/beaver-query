@@ -49,11 +49,11 @@ class Expression {
 	}
 
 	public function is_null(): Expression {
-		return Operation::is_op($this, AtomNull::get());
+		return Operation::is_op($this, Atom::null());
 	}
 
 	public function is_not_null(): Expression {
-		return Operation::is_not_op($this, AtomNull::get());
+		return Operation::is_not_op($this, Atom::null());
 	}
 
 	public function in_range($from, $to, $start_inclusive = true, $end_inclusive = true): Expression {

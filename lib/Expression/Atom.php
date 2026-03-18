@@ -49,6 +49,18 @@ class Atom extends Expression {
 
 	}
 
+	public function is_true(): bool {
+		return $this->term === 'TRUE';
+	}
+
+	public function is_false(): bool {
+		return $this->term === 'FALSE';
+	}
+
+	public function is_null(): bool {
+		return $this->term === 'NULL';
+	}
+
 	public function __toString(): string {
 		return $this->term;
 	}
