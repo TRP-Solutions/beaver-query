@@ -8,9 +8,13 @@ namespace TRP\BeaverQuery\Expression;
 use TRP\BeaverQuery\{Parser,BeaverQueryException};
 
 class Atom extends Expression {
+	private static self $true;
+	private static self $false;
+	private static self $null;
+
 	public static function literal(mixed $value): Atom {
 		if(is_bool($value)){
-			return $value ? AtomTrue::get() : AtomFalse::get();
+			return $value ? self::true() : self::false();
 		} elseif(is_int($value)){
 			return new self((string) $value);
 		} elseif(is_float($value)){
@@ -18,12 +22,27 @@ class Atom extends Expression {
 		} elseif(is_string($value)){
 			return new self(Parser::string_literal($value));
 		} elseif(!isset($value)){
-			return AtomNull::get();
+			return self::null();
 		} elseif($value instanceof IntervalUnit){
 			return new self($value->value);
 		} else {
 			throw new BeaverQueryException("Can't convert value to literal");
 		}
+	}
+
+	public static function true(){
+		self::$true ??= new self('TRUE');
+		return self::$true;
+	}
+
+	public static function false(){
+		self::$false ??= new self('FALSE');
+		return self::$false;
+	}
+
+	public static function null(){
+		self::$null ??= new self('NULL');
+		return self::$null;
 	}
 
 	protected function __construct(private string $term){
@@ -36,39 +55,5 @@ class Atom extends Expression {
 
 	public function print(BindingStrength $outer_strength): string {
 		return (string) $this;
-	}
-}
-
-abstract class AtomSingleton extends Atom {
-	public static function get(){
-		if(!isset(static::$instance)){
-			static::$instance = new static();
-		}
-		return static::$instance;
-	}
-
-	protected function __construct(){
-
-	}
-}
-
-class AtomTrue extends AtomSingleton {
-	protected static $instance;
-	public function __toString(): string {
-		return 'TRUE';
-	}
-}
-
-class AtomFalse extends AtomSingleton {
-	protected static $instance;
-	public function __toString(): string {
-		return 'FALSE';
-	}
-}
-
-class AtomNull extends AtomSingleton {
-	protected static $instance;
-	public function __toString(): string {
-		return 'NULL';
 	}
 }

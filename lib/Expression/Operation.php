@@ -40,12 +40,12 @@ class Operation extends Expression {
 		return new static(BindingStrength::Comparison, $left, $infix, $right);
 	}
 
-	public static function in_op(Expression $left, ArgumentList $list): static {
-		return new static(BindingStrength::Comparison, $left, 'IN', $list);
+	public static function in_op(Expression $left, ExpressionList $list): static {
+		return new static(BindingStrength::Comparison, $left, 'IN', $list->as_argument_list());
 	}
 
-	public static function not_in_op(Expression $left, ArgumentList $list): static {
-		return new static(BindingStrength::Comparison, $left, 'NOT IN', $list);
+	public static function not_in_op(Expression $left, ExpressionList $list): static {
+		return new static(BindingStrength::Comparison, $left, 'NOT IN', $list->as_argument_list());
 	}
 
 	public static function asc_order(Expression $expr): static {
@@ -60,7 +60,7 @@ class Operation extends Expression {
 		return new static(BindingStrength::Assignment, $left, '=', $right);
 	}
 
-	protected function __construct(protected BindingStrength $inner_strength, Expression|ArgumentList|string ...$terms){
+	protected function __construct(protected BindingStrength $inner_strength, Expression|ExpressionList|string ...$terms){
 		$this->terms = $terms;
 	}
 

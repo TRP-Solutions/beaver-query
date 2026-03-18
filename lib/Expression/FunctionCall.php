@@ -44,7 +44,7 @@ class FunctionCall extends Atom {
 		$orderby = static::keyword('orderby', $expr);
 		if(isset($orderby)){
 			$orderby = is_array($orderby) ? $orderby : [$orderby];
-			$postfix[] = 'ORDER BY '.OrderingList::parse(...$orderby);
+			$postfix[] = 'ORDER BY '.ExpressionList::parse_ordering(...$orderby);
 		}
 		$separator = static::keyword('separator', $expr);
 		if(isset($separator)){

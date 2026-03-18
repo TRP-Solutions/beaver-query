@@ -5,8 +5,9 @@ https://github.com/TRP-Solutions/beaver-query/blob/main/LICENSE.txt
 */
 declare(strict_types=1);
 namespace TRP\BeaverQuery\Statement;
-use TRP\BeaverQuery\Expression\{Expression, Identifier, ExpressionAlias, ExpressionList, Operation, FunctionCall};
+use TRP\BeaverQuery\Expression\{Expression, Identifier, ExpressionAlias, ExpressionList, Operation, FunctionCall, BooleanAnd};
 use TRP\BeaverQuery\{BeaverQuery,Table,Parser,BeaverQueryException};
+use TRP\BeaverQuery\Join\Join as BQJoin;
 
 abstract class Statement {
 	protected static string $whitespace = PHP_EOL;
@@ -15,286 +16,166 @@ abstract class Statement {
 	}
 
 	abstract public function print(): string;
-}
-
-#[\Property('table', '\TRP\BeaverQuery\Table', set: false)]
-abstract class TableStatement extends Statement {
-	protected Table $table;
 
 	public function __isset($key){
-		if($key === 'table'){
-			return isset($this->table);
-		} else {
-			$proxy_func = $key.'_proxy';
-			return is_callable([$this,$proxy_func]);
-		}
+		return is_callable([$this,"{$key}_proxy"]);
 	}
 
 	public function __get($key){
-		if($key === 'table'){
-			return $this->table;
-		}
-		$proxy_func = $key.'_proxy';
+		$proxy_func = "{$key}_proxy";
 		if(is_callable([$this,$proxy_func])){
 			return $this->$proxy_func();
 		}
 	}
 }
 
-class Insert extends TableStatement {
-	use ColumnAssignment;
-	protected ?ExpressionList $duplicate_update_list = null;
-	protected ?Select $select = null;
-	protected ?array $columns = null;
-	protected ?int $column_count = null;
-	protected ?array $values_list = null;
+#[\Property('table', '\TRP\BeaverQuery\Table', set: false)]
+trait TableStatement {
+	protected Table $table;
 
-	public function __construct(
-		protected Table $table,
-		protected bool $low_priority = false,
-		protected bool $delayed = false,
-		protected bool $high_priority = false,
-		protected bool $ignore = false
-	){
-
-	}
-
-	public function columns(...$columns): static {
-		$this->columns = array_map(fn($column) => Identifier::parse_strict($column), Parser::list($columns));
-		return $this;
-	}
-
-	public function values(...$values): static {
-		$values = Parser::list($values);
-		$value_count = count($values);
-		if(isset($this->column_count) && $this->column_count !== $value_count){
-			throw new BeaverQueryException("Failed matching $value_count value(s) with $this->column_count column(s)");
-		} else {
-			if(!isset($this->values_list)){
-				$this->values_list = [];
-			}
-			$this->values_list[] = ExpressionList::parse(...$values);
-			$this->column_count ??= $value_count;
-		}
-		return $this;
-	}
-
-	public function select($select, $values = []): Select {
-		if($select instanceof Select){
-			$this->select = $select;
-		} else {
-			$this->select = BeaverQuery::select($select, $values);
-		}
-		return $this->select;
-	}
-
-	public function dupl_values(...$columns): static {
-		$assignment = [];
-		foreach($columns as $column_name){
-			$column = Identifier::parse_strict($column_name);
-			$assignment[] = Operation::assignment($column, FunctionCall::parse('VALUES',$column));
-		}
-		$this->add_assignment_list('duplicate_update_list', ...$assignment);
-		return $this;
-	}
-
-	public function dupl(...$values): static {
-		$this->parse_assignment_list($values, 'duplicate_update_list');
-		return $this;
-	}
-
-	public function print(): string {
-		$sql = ["INSERT"];
-		if($this->high_priority){
-			$sql[] = 'HIGH_PRIORITY';
-		} elseif($this->delayed){
-			$sql[] = 'DELAYED';
-		} elseif($this->low_priority){
-			$sql[] = 'LOW_PRIORITY';
-		}
-		if($this->ignore){
-			$sql[] = 'IGNORE';
-		}
-		$sql[] = 'INTO '.$this->table->get_name()->identifier_with_alias();
-		$sql = [implode(' ',$sql)];
-
-		if(isset($this->column_assignment)){
-			$sql[] = "SET ".$this->column_assignment;
-		} elseif(isset($this->values_list)) {
-			if(isset($this->columns)){
-				$sql[] = '('.implode(',',array_map(fn($col)=>$col->identifier_unqualified(),$this->columns)).')';
-			}
-			$sql[] = 'VALUES';
-			$sql[] = "(".implode("),".self::$whitespace."(",$this->values_list).')';
-		} elseif(isset($this->select)){
-			$sql[] = $this->select->print();
-		} else {
-			throw new BeaverQueryException('No values in insert statement');
-		}
-		if(isset($this->duplicate_update_list)){
-			$sql[] = "ON DUPLICATE KEY UPDATE ".$this->duplicate_update_list;
-		}
-		
-		return implode(self::$whitespace, $sql);
-	}
-}
-
-class Select extends TableStatement {
-	use Join, Where, OrderBy, GroupBy, Limit, Offset;
-	protected array $select_expr = [];
-
-	public function __construct(?Table $table = null, array $values = []){
-		if(isset($table)){
-			$this->table = $table;
-		}
-		$this->columns(...$values);
-	}
-
-	public function from(string|array|Table $table): Table {
-		$this->table = Table::parse($table);
+	public function table_proxy(): Table {
 		return $this->table;
 	}
+}
 
-	public function columns(...$columns): static {
-		foreach(Parser::list($columns) as $column){
-			if(is_string($column)){
-				$identifier = Parser::dotted_name_with_alias($column);
-				if(isset($identifier) && !isset($identifier[2])){
-					$table_name ??= $this->table->get_name();
-					$this->select_expr[] = Identifier::parse_strict($identifier, $table_name);
-					continue;
-				}
-			}
-			$this->select_expr[] = ExpressionAlias::parse($column);
+trait Join {
+	protected array $joins = [];
+	protected array $used_aliases;
+	public function join(BQJoin $join): BQJoin {
+		if(!isset($this->used_aliases)){
+			$this->used_aliases = [$this->table->get_name()->alias()];
+		}
+		$this->used_aliases[] = $join->table->get_name()->alias($this->used_aliases);
+		$this->joins[] = $join;
+		return $join;
+	}
+
+	public function left_join($table, $condition): BQJoin {
+		return $this->join(BQJoin::left_join($table, $condition));
+	}
+
+	public function right_join($table, $condition): BQJoin {
+		return $this->join(BQJoin::right_join($table, $condition));
+	}
+
+	public function inner_join($table, $condition = null): BQJoin {
+		return $this->join(BQJoin::inner_join($table, $condition));
+	}
+}
+
+#[\Property('where', '\TRP\BeaverQuery\Expression\ExpressionProxy', set: false)]
+trait Where {
+	protected ?Expression $where = null;
+	public function where(...$expr): static {
+		if(!isset($this->where)){
+			$this->where = BooleanAnd::parse(...$expr);
+		} else {
+			$this->where = $this->where->and(...$expr);
 		}
 		return $this;
 	}
 
-	public function print(): string {
-		return $this->print_select($this->select_expr());
+	public function where_proxy(): ExpressionProxy {
+		return new ExpressionProxy($this, 'where');
+	}
+}
+
+#[\Property('order_by', '\TRP\BeaverQuery\Expression\ExpressionProxy', set: false)]
+trait OrderBy {
+	protected ?ExpressionList $orderby = null;
+	public function order_by(...$expr): static {
+		if(!isset($this->orderby)){
+			$this->orderby = ExpressionList::parse_ordering(...$expr);
+		} else {
+			$this->orderby->add(...$expr);
+		}
+		return $this;
 	}
 
-	public function to_select_count(): string {
-		$statement = $this->print_select('1 as `row`');
-		return "SELECT count(*) FROM ($statement) as `result`;";
+	public function order_by_proxy(): ExpressionProxy {
+		return new ExpressionProxy($this, 'order_by');
+	}
+}
+
+trait Limit {
+	protected ?int $limit = null;
+	public function limit(?int $limit): static {
+		$this->limit = $limit;
+		return $this;
+	}
+}
+
+trait Offset {
+	protected ?int $offset = null;
+	public function offset(?int $offset): static {
+		$this->offset = $offset;
+		return $this;
+	}
+}
+
+#[\Property('group_by', '\TRP\BeaverQuery\Expression\ExpressionProxy', set: false)]
+#[\Property('having', '\TRP\BeaverQuery\Expression\ExpressionProxy', set: false)]
+trait GroupBy {
+	protected ?ExpressionList $groupby = null;
+	protected ?Expression $having = null;
+
+	public function group_by(...$expr): static {
+		if(!isset($this->groupby)){
+			$this->groupby = ExpressionList::parse(...$expr);
+		} else {
+			$this->groupby->add(...$expr);
+		}
+		return $this;
 	}
 
-	protected function print_select(string $raw_select_expr): string {
-		$sql = ["SELECT\n  ".$raw_select_expr];
-		if(isset($this->table)){
-			$sql[] = "FROM\n  ".$this->table->get_name()->identifier_with_alias();
+	public function group_by_proxy(): ExpressionProxy {
+		return new ExpressionProxy($this, 'group_by');
+	}
+
+	public function having(...$expr): static {
+		if(!isset($this->having)){
+			$this->having = BooleanAnd::parse(...$expr);
+		} else {
+			$this->having->and($expr);
 		}
-		foreach($this->joins as $join){
-			$sql[] = (string) $join;
+		return $this;
+	}
+
+	public function having_proxy(): ExpressionProxy {
+		return new ExpressionProxy($this, 'having');
+	}
+}
+
+trait ColumnAssignment {
+	protected ?ExpressionList $column_assignment = null;
+
+	public function set(...$values): static {
+		$this->parse_assignment_list($values);
+		return $this;
+	}
+
+	protected function parse_assignment_list(array $values, $list_name = 'column_assignment'){
+		if(Parser::is_pair($values)){
+			$values = [$values[0], $values[1]];
+		} else {
+			$values = Parser::list($values);
 		}
-		if(isset($this->where)){
-			$sql[] = "WHERE\n  ".$this->where;
-		}
-		if(!empty($this->groupby)){
-			$sql[] = "GROUP BY ".$this->groupby;
-		}
-		if(isset($this->having)){
-			$sql[] = "HAVING ".$this->having;
-		}
-		if(!empty($this->orderby)){
-			$sql[] = "ORDER BY ".$this->orderby;
-		}
-		if(isset($this->limit)){
-			$sql[] = "LIMIT ".$this->limit;
-			if(isset($this->offset)){
-				$sql[] = "OFFSET ".$this->offset;
+		$assignment = [];
+		foreach($values as $key => $value){
+			if(is_numeric($key) && Parser::is_pair($value)){
+				$assignment[] = Operation::assignment(Identifier::parse_strict($value[0]), Expression::parse($value[1]));
+			} else {
+				$assignment[] = Operation::assignment(Identifier::parse_strict($key), Expression::parse($value));
 			}
 		}
-		return implode(self::$whitespace, $sql);
+		$this->add_assignment_list($list_name, ...$assignment);
 	}
 
-	protected function select_expr(): string {
-		$expr = $this->select_expr;
-		if(isset($this->table)){
-			$expr = array_merge($this->table->get_column_list(), $expr);
+	protected function add_assignment_list($list_name, Operation ...$assignment){
+		if(!isset($this->$list_name) && !empty($assignment)){
+			$this->$list_name = new ExpressionList(...$assignment);
+		} else {
+			$this->$list_name->add(...$assignment);
 		}
-		if(!empty($this->joins)){
-			$expr = array_merge($expr, ...array_map(fn($join)=>$join->table->get_column_list(), $this->joins));
-		}
-		return implode(",\n  ",$expr);
-	}
-}
-
-class Update extends TableStatement {
-	use ColumnAssignment, Join, Where, OrderBy, Limit;
-
-	public function __construct(
-		?Table $table = null,
-		protected bool $low_priority = false,
-		protected bool $ignore = false
-	){
-		if(isset($table)){
-			$this->table = $table;
-		}
-	}
-
-	public function print(): string {
-		$sql = ["UPDATE"];
-		if($this->low_priority){
-			$sql[] = 'LOW_PRIORITY';
-		}
-		if($this->ignore){
-			$sql[] = 'IGNORE';
-		}
-		$sql[] = $this->table->get_name()->identifier_with_alias();
-		foreach($this->joins as $join){
-			$sql[] = (string) $join;
-		}
-		$sql[] = "SET\n  ".$this->column_assignment;
-		if(isset($this->where)){
-			$sql[] = "WHERE\n  ".$this->where;
-		}
-		if(!empty($this->orderby)){
-			$sql[] = "ORDER BY ".$this->orderby;
-		}
-		if(isset($this->limit)){
-			$sql[] = "LIMIT ".$this->limit;
-		}
-		return implode(self::$whitespace, $sql);
-	}
-}
-
-class Delete extends TableStatement {
-	use Where, OrderBy, Limit;
-
-	public function __construct(
-		?Table $table = null,
-		protected bool $low_priority = false,
-		protected bool $quick = false,
-		protected bool $ignore = false
-	){
-		if(isset($table)){
-			$this->table = $table;
-		}
-	}
-
-	public function print(): string {
-		$sql = ["DELETE"];
-		if($this->low_priority){
-			$sql[] = 'LOW_PRIORITY';
-		}
-		if($this->quick){
-			$sql[] = 'QUICK';
-		}
-		if($this->ignore){
-			$sql[] = 'IGNORE';
-		}
-		$sql[] = 'FROM';
-		$sql[] = $this->table->get_name()->identifier_with_alias();
-		if(isset($this->where)){
-			$sql[] = "WHERE\n  ".$this->where;
-		}
-		if(!empty($this->orderby)){
-			$sql[] = "ORDER BY ".$this->orderby;
-		}
-		if(isset($this->limit)){
-			$sql[] = "LIMIT ".$this->limit();
-		}
-		return implode(self::$whitespace, $sql);
 	}
 }

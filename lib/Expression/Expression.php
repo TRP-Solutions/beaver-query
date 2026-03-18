@@ -98,11 +98,11 @@ class Expression {
 	}
 
 	public function in(array $list): Expression {
-		return Operation::in_op($this, ArgumentList::parse(...$list));
+		return Operation::in_op($this, ExpressionList::parse_argument(...$list));
 	}
 
 	public function not_in(array $list): Expression {
-		return Operation::not_in_op($this, ArgumentList::parse(...$list));
+		return Operation::not_in_op($this, ExpressionList::parse_argument(...$list));
 	}
 
 	public function func(string $function, ...$additional_arguments): Expression {
