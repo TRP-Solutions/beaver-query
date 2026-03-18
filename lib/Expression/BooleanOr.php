@@ -11,7 +11,7 @@ class BooleanOr extends BooleanOperation {
 	protected const INNER_STRENGTH = BindingStrength::Or;
 
 	protected static function filter(Expression $expression): bool {
-		return !($expression instanceof Atom && ($expression->is_false() || $expression->is_null()));
+		return !($expression instanceof Atom && ($expression->is_false_atom() || $expression->is_null_atom()));
 	}
 
 	public function or(...$expr): Expression {

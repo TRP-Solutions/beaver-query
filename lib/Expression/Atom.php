@@ -49,15 +49,15 @@ class Atom extends Expression {
 
 	}
 
-	public function is_true(): bool {
+	public function is_true_atom(): bool {
 		return $this->term === 'TRUE';
 	}
 
-	public function is_false(): bool {
+	public function is_false_atom(): bool {
 		return $this->term === 'FALSE';
 	}
 
-	public function is_null(): bool {
+	public function is_null_atom(): bool {
 		return $this->term === 'NULL';
 	}
 
